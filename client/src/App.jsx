@@ -8,6 +8,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Services from './pages/Services'
 import { AuthProvider } from './firebase/AuthContext'
+import UserDocs from './pages/UserDocs'
 function App() {
   const [count, setCount] = useState(0)
 
@@ -19,6 +20,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home/>}/>
           <Route path="/services" element={<Services/>}/>
+          <Route path="/user-docs" element={<UserDocs/>}/>
         </Routes>
         <Footer/>
       </Router>
