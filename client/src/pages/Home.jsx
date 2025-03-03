@@ -387,8 +387,7 @@ export default function Home() {
                   </p>
                 </div>
               )}
-            </motion.div>          
-            </motion.div>
+            </motion.div>          </motion.div>
         </motion.div>
         </motion.div>
       
