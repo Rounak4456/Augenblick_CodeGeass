@@ -14,7 +14,8 @@ import { useAuth } from '../firebase/AuthContext'
 import { motion } from 'framer-motion'
 import CharacterCount from '@tiptap/extension-character-count'
 import { useLocation, useNavigate } from 'react-router-dom'
-
+import emailjs from '@emailjs/browser'
+emailjs.init("Qbzg7xNP95oScLfsQ");
 export default function Services() {
     const [wordCount, setWordCount] = useState(0)
     const [status, setStatus] = useState('connected')
@@ -82,7 +83,33 @@ export default function Services() {
             }
         }
     })
-
+    const sendCollaborationEmail = async (collaboratorEmail, documentTitle, ownerName) => {
+        try {
+            const emailParams = {
+                service_id: 'service_6gyspyc',
+                template_id: 'template_2shuxj3',
+                user_id: 'Qbzg7xNP95oScLfsQ',
+                template_params: {
+                    to_email: collaboratorEmail,
+                    to_name: collaboratorEmail.split('@')[0],
+                    from_name: ownerName,
+                    message: `I've shared a document titled "${documentTitle}" with you. You can access it by logging into your account.`,
+                }
+            };
+    
+            const response = await emailjs.send(
+                emailParams.service_id,
+                emailParams.template_id,
+                emailParams.template_params,
+                emailParams.user_id
+            );
+    
+            return response.status === 200;
+        } catch (error) {
+            console.error('Error sending collaboration email:', error);
+            return false;
+        }
+    };
     const addImage = () => {
         const url = window.prompt('Enter image URL')
         if (url) {
@@ -220,7 +247,11 @@ export default function Services() {
                 await updateDoc(docRef, {
                     collaborators: arrayUnion(collaboratorEmail)
                 })
-                
+                const emailSent = await sendCollaborationEmail(
+                    collaboratorEmail,
+                    documentTitle,
+                    user.displayName || user.email
+                );
                 setCollaboratorEmail('')
                 setStatusMessage('Collaborator added successfully')
                 setTimeout(() => setStatusMessage(''), 3000)
