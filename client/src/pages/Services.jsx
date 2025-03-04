@@ -22,8 +22,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import Heading from '@tiptap/extension-heading'
 import { Extension } from '@tiptap/core'
 import { PDFDocument } from 'pdf-lib';
+import mammoth from 'mammoth';
 import { saveAs } from 'file-saver';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { Document, Packer, Paragraph, TextRun,ImageRun } from 'docx';
 
 emailjs.init("Qbzg7xNP95oScLfsQ");
 
@@ -119,60 +120,84 @@ export default function Services() {
         return new Blob([pdf.output('blob')], { type: 'application/pdf' });
     };
 
+
+    
     const downloadAsWord = async () => {
         try {
-            const content = editor.getJSON();
+            const content = editor.getHTML();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, 'text/html');
             const children = [];
 
-            // Helper function to safely get text from node
-            const getNodeText = (node) => {
-                if (!node) return '';
-                if (typeof node.text === 'string') return node.text;
-                if (Array.isArray(node.content)) {
-                    return node.content.map(getNodeText).join('');
+            const processImages = async (imgElement) => {
+                try {
+                    const response = await fetch(imgElement.src);
+                    const blob = await response.blob();
+                    const arrayBuffer = await blob.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    
+                    return new ImageRun({
+                        data: uint8Array,
+                        transformation: {
+                            width: 400,  // Reduced width
+                            height: 250, // Reduced height to maintain aspect ratio
+                        },
+                        floating: {
+                            horizontalPosition: {
+                                relative: 'column',
+                                align: 'left',
+                                offset: 914400, // 1 inch in EMUs (English Metric Units)
+                            },
+                            verticalPosition: {
+                                relative: 'paragraph',
+                                align: 'top',
+                            },
+                            wrap: {
+                                type: 'square',
+                                side: 'bothSides',
+                            },
+                            margins: {
+                                top: 201440,    // ~0.2 inches
+                                bottom: 201440, // ~0.2 inches
+                                left: 201440,   // ~0.2 inches
+                                right: 201440,  // ~0.2 inches
+                            },
+                        },
+                    });
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    return null;
                 }
-                return '';
             };
 
-            // Convert editor content to Word document format
-            const processNode = (node) => {
-                switch (node.type) {
-                    case 'heading':
-                        return new Paragraph({
-                            children: [new TextRun({ 
-                                text: getNodeText(node),
-                                size: 32, 
-                                bold: true 
-                            })],
-                            spacing: { before: 240, after: 120 }
-                        });
-                    case 'paragraph':
-                        return new Paragraph({
-                            children: [new TextRun({ 
-                                text: getNodeText(node),
-                                size: 24 
-                            })],
-                            spacing: { before: 120, after: 120 }
-                        });
-                    default:
-                        return new Paragraph({
-                            children: [new TextRun({ 
-                                text: getNodeText(node),
-                                size: 24 
-                            })]
-                        });
+            // Process paragraphs and images
+            for (const node of doc.body.children) {
+                if (node.nodeName === 'P') {
+                    const runs = [];
+                    for (const child of node.childNodes) {
+                        if (child.nodeName === 'IMG') {
+                            const imageRun = await processImages(child);
+                            if (imageRun) {
+                                // Add a paragraph break before the image
+                                if (runs.length > 0) {
+                                    children.push(new Paragraph({ children: runs }));
+                                    runs.length = 0;
+                                }
+                                children.push(new Paragraph({ children: [imageRun] }));
+                            }
+                        } else if (child.nodeType === Node.TEXT_NODE) {
+                            if (child.textContent.trim()) {
+                                runs.push(new TextRun({ text: child.textContent.trim(), break: 1 }));
+                            }
+                        }
+                    }
+                    if (runs.length > 0) {
+                        children.push(new Paragraph({ children: runs }));
+                    }
                 }
-            };
-
-            // Process all nodes
-            if (Array.isArray(content.content)) {
-                content.content.forEach(node => {
-                    children.push(processNode(node));
-                });
             }
 
-            // Create document
-            const doc = new Document({
+            const docx = new Document({
                 sections: [{
                     properties: {},
                     children: children.length > 0 ? children : [
@@ -183,16 +208,15 @@ export default function Services() {
                 }]
             });
 
-            // Generate blob directly instead of buffer
-            const blob = await Packer.toBlob(doc);
-            
-            // Save the file
+            const blob = await Packer.toBlob(docx);
             saveAs(blob, `${documentTitle}.docx`);
+
         } catch (error) {
             console.error('Error converting to Word:', error);
             alert('Error converting to Word document. Please try again.');
         }
     };
+    // ... existing code ...
 
     const handleGrammarCheck = async () => {
         if (!editor) return;
