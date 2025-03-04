@@ -9,6 +9,7 @@ import Footer from './components/Footer'
 import Services from './pages/Services'
 import { AuthProvider } from './firebase/AuthContext'
 import UserDocs from './pages/UserDocs'
+import Works from './pages/Works'
 function App() {
   const [count, setCount] = useState(0)
 
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<Home/>}/>
           <Route path="/services" element={<Services/>}/>
           <Route path="/user-docs" element={<UserDocs/>}/>
+          <Route path="/works" element={<Works/>}/>
         </Routes>
         <Footer/>
       </Router>

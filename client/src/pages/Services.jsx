@@ -274,13 +274,9 @@ export default function Services() {
             const result = await chatSession.sendMessage(prompt);
             const modifiedText = result.response.text();
 
+            // Only set the AI response in state, don't update editor content yet
             setAiResponse(modifiedText);
-
-            // Optionally, update the editor content with the AI response
-            if (modifiedText) {
-                editor.commands.setContent(modifiedText);
-                saveToFirestore(modifiedText)
-            }
+            
         } catch (error) {
             console.error('Error processing AI request:', error);
             setAiResponse('Error processing your request');
@@ -725,11 +721,11 @@ export default function Services() {
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="fixed top-24 right-4 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50"
                 >
-                    <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+                    <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-black">
                         <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center">
                                 <svg 
-                                    className="w-5 h-5 text-white animate-pulse" 
+                                    className="w-5 h-5 text-white" 
                                     fill="none" 
                                     stroke="currentColor" 
                                     viewBox="0 0 24 24"
@@ -742,7 +738,7 @@ export default function Services() {
                                     />
                                 </svg>
                             </div>
-                            <h3 className="font-medium text-gray-900">AI Assistant</h3>
+                            <h3 className="font-medium text-white">AI Assistant</h3>
                         </div>
                         <motion.button
                             whileHover={{ scale: 1.1 }}
@@ -761,7 +757,7 @@ export default function Services() {
                             <div className="text-center py-8 text-gray-500">
                                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-100 to-blue-100 flex items-center justify-center">
                                     <svg 
-                                        className="w-8 h-8 text-purple-500" 
+                                        className="w-8 h-8 text-gray-500" 
                                         fill="none" 
                                         stroke="currentColor" 
                                         viewBox="0 0 24 24"
@@ -784,7 +780,7 @@ export default function Services() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="mb-4"
                             >
-                                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-gray-100">
+                                <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
                                     <p className="text-sm text-gray-700 mb-3 leading-relaxed">{aiResponse}</p>
                                     <div className="flex space-x-2 mt-2">
                                         <motion.button
@@ -792,10 +788,11 @@ export default function Services() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => {
                                                 editor.commands.setContent(aiResponse);
+                                                saveToFirestore(aiResponse);
                                                 setAiResponse('');
                                                 setAiInput('');
                                             }}
-                                            className="flex-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-1"
+                                            className="flex-1 px-3 py-1.5 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-all duration-200 flex items-center justify-center space-x-1"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -805,7 +802,10 @@ export default function Services() {
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
-                                            onClick={() => setAiResponse('')}
+                                            onClick={() => {
+                                                setAiResponse('');
+                                                setAiInput('');
+                                            }}
                                             className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center space-x-1"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -824,13 +824,13 @@ export default function Services() {
                                 value={aiInput}
                                 onChange={(e) => setAiInput(e.target.value)}
                                 placeholder="Ask me anything..."
-                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50 placeholder-gray-400 text-sm"
+                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-gray-50 placeholder-gray-400 text-sm"
                             />
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleAIRequest}
-                                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center space-x-1"
+                                className="px-4 py-2 bg-gradient-to-r from-black to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-black transition-all duration-200 flex items-center space-x-1"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -850,18 +850,18 @@ export default function Services() {
                     className="fixed top-24 right-[420px] w-96 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50"
                 >
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b border-gray-200">
+                    <div className="bg-black px-4 py-3 border-b border-gray-200">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-2">
-                                <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </span>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900">Grammar Check</h3>
-                                    <p className="text-xs text-gray-500">
+                                    <h3 className="font-semibold text-white">Grammar Check</h3>
+                                    <p className="text-xs text-gray-300">
                                         {grammarErrors.length 
                                             ? `${grammarErrors.length} suggestions found`
                                             : 'Analysis complete'}
@@ -923,9 +923,6 @@ export default function Services() {
                                                 }}
                                                 className="inline-flex items-center space-x-1 px-3 py-1.5 bg-gray-50 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
                                                 <span>Ignore</span>
                                             </motion.button>
                                             <motion.button
@@ -941,11 +938,8 @@ export default function Services() {
                                                     setGrammarErrors(prev => prev.filter((_, i) => i !== index));
                                                     setGrammarCorrections(prev => prev.filter((_, i) => i !== index));
                                                 }}
-                                                className="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-50 text-blue-600 text-sm font-medium rounded-md hover:bg-blue-100 transition-colors"
+                                                className="inline-flex items-center space-x-1 px-3 py-1.5 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-900 transition-colors"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
                                                 <span>Accept</span>
                                             </motion.button>
                                         </div>
@@ -958,9 +952,9 @@ export default function Services() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-center py-8"
                             >
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-50 flex items-center justify-center">
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-900 flex items-center justify-center">
                                     <svg 
-                                        className="w-8 h-8 text-green-500" 
+                                        className="w-8 h-8 text-white" 
                                         fill="none" 
                                         stroke="currentColor" 
                                         viewBox="0 0 24 24"

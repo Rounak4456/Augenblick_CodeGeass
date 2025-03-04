@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../firebase/FirebaseConfig';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth } from '../firebase/AuthContext';
@@ -22,17 +22,32 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <div className="flex-shrink-0 -ml-2 flex items-center space-x-2">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-white text-2xl font-extrabold tracking-wider">
-              Augenblick
-            </span>
+          <div className="flex-shrink-0 -ml-2 flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <svg 
+                className="w-8 h-8 text-white" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+                />
+              </svg>
+              <Link to="/" className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-white text-2xl font-extrabold tracking-wider">
+                DraftMate
+              </Link>
+            </div>
             <span className="text-gray-500 text-sm font-light border-l border-gray-700 pl-2">Content Studio</span>
           </div>
 
           {/* Navigation Links */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-10">
-              <a href="/portfolio" className="text-gray-400 hover:text-white px-3 py-2 text-base font-medium transition-all duration-300 hover:scale-105 flex items-center">
+              <a href="/works" className="text-gray-400 hover:text-white px-3 py-2 text-base font-medium transition-all duration-300 hover:scale-105 flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
                 </svg>

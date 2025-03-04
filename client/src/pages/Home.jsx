@@ -7,7 +7,7 @@ export default function Home() {
 
   // Add state for carousel
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+
   const slides = [
     {
       image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&q=80",
@@ -62,75 +62,79 @@ export default function Home() {
       <div className="absolute inset-0 bg-[url('/images/grid-pattern.svg')] opacity-5"></div>
 
       {/* Hero Section with animations */}
-      <motion.div 
+      {/* Hero Section with animations */}
+      <motion.div
         className="relative"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <div className="max-w-7xl mx-auto px-6 pt-20 pb-32">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            {/* Left content */}
-            <div className="flex-1 text-left space-y-8">
-              {/* Main Heading */}
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-                The content studio for
-                <span className="block mt-2 bg-gradient-to-r from-gray-800 to-black text-transparent bg-clip-text">
-                  creating impactful stories
-                </span>
-              </h1>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="relative">
+            {/* Reduced height with max-h-[70vh] */}
+            <div className="w-full aspect-video max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl mb-20">
+              <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/50 z-10"></div>
+              <motion.div
+                className="absolute inset-0 flex"
+                animate={{ x: `${-100 * currentSlide}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                {slides.map((slide, index) => (
+                  <div key={index} className="w-full flex-shrink-0 relative">
+                    {/* Add blur effect to left and right sides */}
+                    <div className="absolute inset-y-0 left-0 w-[15%] bg-gradient-to-r from-black/80 to-transparent z-10"></div>
+                    <div className="absolute inset-y-0 right-0 w-[15%] bg-gradient-to-l from-black/80 to-transparent z-10"></div>
+                    <img
+                      src={slide.image}
+                      alt={slide.alt}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </motion.div>
 
-              <p className="text-gray-600 text-lg md:text-xl">
-                Transform your ideas into compelling content with our powerful editing suite. 
-                Featuring real-time collaboration, AI assistance, and version control.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                <button className="px-8 py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                  Start Writing
-                </button>
-                <button className="px-8 py-4 border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-900 hover:text-white transition-all duration-300">
-                  View Examples
-                </button>
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-all ${currentSlide === index ? 'bg-white w-6' : 'bg-white/50'
+                      }`}
+                    onClick={() => setCurrentSlide(index)}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* Right content - Carousel */}
-            <div className="flex-1 relative">
-              <div className="relative w-full aspect-video rounded-2xl mb-10 overflow-hidden shadow-2xl">
-                <motion.div 
-                  className="absolute inset-0 flex"
-                  animate={{ x: `${-100 * currentSlide}%` }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                >
-                  {slides.map((slide, index) => (
-                    <div key={index} className="w-full flex-shrink-0">
-                      <img 
-                        src={slide.image} 
-                        alt={slide.alt}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </motion.div>
-                
-                {/* Carousel indicators */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                  {slides.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        currentSlide === index ? 'bg-white w-6' : 'bg-white/50'
-                      }`}
-                      onClick={() => setCurrentSlide(index)}
-                    />
-                  ))}
+            {/* Adjusted content positioning for smaller hero */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center">
+              <div className="max-w-3xl mx-auto text-center px-4">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">
+                  The content studio for
+                  <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
+                    creating impactful stories
+                  </span>
+                </h1>
+
+                <p className="text-gray-200 text-base md:text-lg mb-6">
+                  Transform your ideas into compelling content with our powerful editing suite.
+                  Featuring real-time collaboration, AI assistance, and version control.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button className="px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                    Start Writing
+                  </button>
+                  <button className="px-6 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-black transition-all duration-300">
+                    View Examples
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </motion.div>
-      <motion.div 
+
+      <motion.div
         className="overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black relative py-32"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -149,7 +153,7 @@ export default function Home() {
         <div className="flex flex-col gap-4 text-9xl relative">
           {/* First Row */}
           <div className="flex flex-nowrap gap-2 marquee-container">
-            <motion.div 
+            <motion.div
               className="flex gap-2 whitespace-nowrap"
               animate={{
                 x: [0, -1000],
@@ -183,7 +187,7 @@ export default function Home() {
 
           {/* Second Row - Moving in opposite direction */}
           <div className="flex flex-nowrap gap-2 marquee-container">
-            <motion.div 
+            <motion.div
               className="flex gap-8 whitespace-nowrap"
               animate={{
                 x: [-1000, 0],
@@ -217,7 +221,7 @@ export default function Home() {
 
           {/* Third Row */}
           <div className="flex flex-nowrap gap-8 marquee-container">
-            <motion.div 
+            <motion.div
               className="flex gap-8 whitespace-nowrap"
               animate={{
                 x: [0, -1000],
@@ -250,8 +254,8 @@ export default function Home() {
           </div>
         </div>
       </motion.div>
-      
-      <motion.div 
+
+      <motion.div
         className="max-w-7xl mx-auto px-6 relative z-10 py-20"
         initial="hidden"
         whileInView="visible"
@@ -259,13 +263,13 @@ export default function Home() {
         variants={containerVariants}
       >
         <div className="relative bg-gradient-to-br from-white to-gray-50 py-12 px-6 rounded-xl shadow-sm mb-24 border border-gray-100">
-          <motion.h2 
+          <motion.h2
             className="text-center text-4xl md:text-5xl font-bold text-gray-900 mb-6"
             variants={itemVariants}
           >
             Create your editor with the features you want
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-2xl text-center text-gray-600 mb-8 max-w-4xl mx-auto"
             variants={itemVariants}
           >
@@ -273,15 +277,15 @@ export default function Home() {
           </motion.p>
         </div>
         {/* Product Cards Grid */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           variants={containerVariants}
         >
           {/* Editor Card */}
-          <motion.div 
+          <motion.div
             className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer"
             variants={itemVariants}
-            whileHover={{ 
+            whileHover={{
               scale: 1.03,
               boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               backgroundColor: "rgba(255, 255, 255, 0.95)"
@@ -289,7 +293,7 @@ export default function Home() {
             whileTap={{ scale: 0.98 }}
           >
             <div className="mb-6">
-              <motion.div 
+              <motion.div
                 className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4"
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.6 }}
@@ -305,17 +309,17 @@ export default function Home() {
               <p className="text-gray-600">Build custom editors that align perfectly with your user's needs, offering flexibility and ease of use.</p>
             </div>
             <a href="/editor" className="inline-flex items-center text-gray-900 font-medium hover:gap-2 transition-all duration-300">
-              Learn more 
+              Learn more
               <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </a>
           </motion.div>
           {/* Collaboration Card */}
-          <motion.div 
+          <motion.div
             className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer"
             variants={itemVariants}
-            whileHover={{ 
+            whileHover={{
               scale: 1.03,
               boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               backgroundColor: "rgba(255, 255, 255, 0.95)"
@@ -323,7 +327,7 @@ export default function Home() {
             whileTap={{ scale: 0.98 }}
           >
             <div className="mb-6">
-              <motion.div 
+              <motion.div
                 className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4"
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.6 }}
@@ -339,17 +343,17 @@ export default function Home() {
               <p className="text-gray-600">Enable real-time collaboration with live cursors, offline editing, and seamless content synchronization.</p>
             </div>
             <a href="/collaboration" className="inline-flex items-center text-gray-900 font-medium hover:gap-2 transition-all duration-300">
-              Learn more 
+              Learn more
               <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </a>
           </motion.div>
           {/* AI Assistant Card */}
-          <motion.div 
+          <motion.div
             className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer"
             variants={itemVariants}
-            whileHover={{ 
+            whileHover={{
               scale: 1.03,
               boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               backgroundColor: "rgba(255, 255, 255, 0.95)"
@@ -357,7 +361,7 @@ export default function Home() {
             whileTap={{ scale: 0.98 }}
           >
             <div className="mb-6">
-              <motion.div 
+              <motion.div
                 className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4"
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.6 }}
@@ -373,14 +377,14 @@ export default function Home() {
               <p className="text-gray-600">Enhance your writing with AI-powered suggestions, translations, and content refinements.</p>
             </div>
             <a href="/ai-assistant" className="inline-flex items-center text-gray-900 font-medium hover:gap-2 transition-all duration-300">
-              Learn more 
+              Learn more
               <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </a>
           </motion.div>
           {/* Comments Card */}
-          <motion.div 
+          <motion.div
             className="col-span-1 md:col-span-2 lg:col-span-3 mt-16 bg-gray-50 rounded-3xl p-12"
             variants={itemVariants}
           >
@@ -393,11 +397,10 @@ export default function Home() {
               ].map((tab) => (
                 <motion.button
                   key={tab.id}
-                  className={`px-6 py-3 rounded-full text-lg font-medium transition-all ${
-                    activeTab === tab.id 
-                      ? 'bg-black text-white' 
+                  className={`px-6 py-3 rounded-full text-lg font-medium transition-all ${activeTab === tab.id
+                      ? 'bg-black text-white'
                       : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                    }`}
                   onClick={() => setActiveTab(tab.id)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -452,8 +455,8 @@ export default function Home() {
               )}
             </motion.div>          </motion.div>
         </motion.div>
-        </motion.div>
-      
+      </motion.div>
+
     </div>
   );
 }
