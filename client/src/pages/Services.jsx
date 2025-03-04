@@ -37,6 +37,8 @@ export default function Services() {
     const [showAIChat, setShowAIChat] = useState(false);
 const [aiInput, setAiInput] = useState('');
 const [aiResponse, setAiResponse] = useState('');
+const [grammarErrors, setGrammarErrors] = useState([]);
+const [grammarCorrections, setGrammarCorrections] = useState([]);
    
       
 const apiKey = 'AIzaSyAF84XF9MkNxQ0P7i1eGxc-Lx--78okLj8';
@@ -54,6 +56,61 @@ const generationConfig = {
     maxOutputTokens: 8192,
 };
 
+  
+  const apiKey1 = 'AIzaSyBpjPYh02T0Jcnj21yFUAgtJgQ2zcqrG4A';
+  const genAI1 = new GoogleGenerativeAI(apiKey);
+  
+  const model1 = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    systemInstruction: "You will receive a piece of text. Identify the parts that contain grammatical errors and provide corrections. Output two arrays with incorrect and correct parts in the same order of occurrence. Maintain the original meaning while ensuring grammatical correctness.",
+  });
+  
+  const generationConfig1 = {
+    temperature: 1,
+    topP: 0.95,
+    topK: 40,
+    maxOutputTokens: 8192,
+    responseMimeType: "text/plain",
+  };
+  
+  const handleGrammarCheck = async () => {
+    if (!editor) return;
+    
+    try {
+        const currentContent = editor.getText();
+        const prompt = `Analyze this text for grammar errors and return a JSON response in this exact format: {"incorrect": ["error1", "error2"], "correct": ["correction1", "correction2"]}. Text to analyze: ${currentContent}`;
+        
+        const result = await model1.generateContent(prompt);
+        const response = await result.response.text();
+        
+        try {
+            // Find JSON content within the response
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const { incorrect, correct } = JSON.parse(jsonMatch[0]);
+                setGrammarErrors(incorrect);
+                setGrammarCorrections(correct);
+                
+                // Highlight errors in the editor
+                const content = editor.getText();
+                const highlightedContent = content.split(' ').map(word => 
+                    incorrect.includes(word) 
+                        ? `<span class="bg-red-200">${word}</span>` 
+                        : word
+                ).join(' ');
+                
+                editor.commands.setContent(highlightedContent);
+                saveToFirestore(highlightedContent);
+            } else {
+                console.error('No valid JSON found in response');
+            }
+        } catch (parseError) {
+            console.error('Error parsing grammar response:', parseError);
+        }
+    } catch (error) {
+        console.error('Error checking grammar:', error);
+    }
+};
 // Update the handleAIRequest function
 const handleAIRequest = async () => {
     if (!editor || !aiInput) return;
@@ -73,6 +130,7 @@ const handleAIRequest = async () => {
         // Optionally, update the editor content with the AI response
         if (modifiedText) {
             editor.commands.setContent(modifiedText);
+            saveToFirestore(modifiedText)
         }
     } catch (error) {
         console.error('Error processing AI request:', error);
@@ -543,6 +601,8 @@ const handleAIRequest = async () => {
                     </div>
                 </div>
             )}
+            
+
             <div className="flex space-x-2">
                 <input
                     type="text"
@@ -561,6 +621,44 @@ const handleAIRequest = async () => {
         </div>
     </div>
 )}
+    {grammarErrors.length > 0 && (
+                <div className="fixed top-24 right-[420px] w-96 bg-white rounded-lg shadow-xl border border-gray-200">
+                    <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                        <h3 className="font-medium text-gray-900">Grammar Suggestions</h3>
+                        <button 
+                            onClick={() => {
+                                setGrammarErrors([]);
+                                setGrammarCorrections([]);
+                            }}
+                            className="text-gray-500 hover:text-gray-900"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div className="p-4 max-h-96 overflow-y-auto">
+                        {grammarErrors.map((error, index) => (
+                            <div key={index} className="mb-3 p-2 bg-gray-50 rounded">
+                                <p className="text-red-500 line-through mb-1">{error}</p>
+                                <p className="text-green-600">{grammarCorrections[index]}</p>
+                                <button
+                                    onClick={() => {
+                                        const content = editor.getText();
+                                        editor.commands.setContent(
+                                            content.replace(error, grammarCorrections[index])
+                                        );
+                                        saveToFirestore(newContent); 
+                                    }}
+                                    className="mt-1 text-sm text-blue-600 hover:text-blue-800"
+                                >
+                                    Replace
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className="max-w-6xl mx-auto px-6 py-12">
                 {/* Document Header */}
                 <div className="mb-6 flex items-center justify-between">
@@ -759,6 +857,16 @@ const handleAIRequest = async () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </button>
+                        <button
+    onClick={handleGrammarCheck}
+    className="p-2 rounded hover:bg-gray-100 transition-colors text-gray-600"
+    title="Check Grammar"
+>
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+    </svg>
+</button>
                         <button
     onClick={() => setShowAIChat(!showAIChat)}
     className="p-2 rounded hover:bg-gray-100 transition-colors text-gray-600"
