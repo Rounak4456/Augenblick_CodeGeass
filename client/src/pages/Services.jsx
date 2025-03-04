@@ -70,6 +70,8 @@ export default function Services() {
     const [aiResponse, setAiResponse] = useState('');
     const [grammarErrors, setGrammarErrors] = useState(null);
     const [grammarCorrections, setGrammarCorrections] = useState([]);
+    const [lastUpdatedBy, setLastUpdatedBy] = useState(null);
+    const [lastUpdatedTime, setLastUpdatedTime] = useState(null);
 
     const apiKey = 'AIzaSyAF84XF9MkNxQ0P7i1eGxc-Lx--78okLj8';
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -373,47 +375,26 @@ export default function Services() {
     }
 
     const saveToFirestore = async (content) => {
-        if (!user || !docId) return
-
+        if (!user || !docId) return;
+        
         try {
-            const now = new Date().toISOString()
-            const docRef = doc(db, 'documents', docId)
-            const docSnap = await getDoc(docRef)
-
-            if (docSnap.exists()) {
-                // Update existing document
-                await updateDoc(docRef, {
-                    content,
-                    updatedAt: now,
-                    lastEditedBy: user.displayName,
-                })
-            } else {
-                // Create new document
-                await setDoc(docRef, {
-                    content,
-                    userId: user.uid,
-                    createdAt: now,
-                    updatedAt: now,
-                    createdBy: user.displayName,
-                    userEmail: user.email,
-                    title: documentTitle,
-                    collaborators: [],
-                    activeUsers: []
-                })
-                setIsOwner(true)
-            }
-
-            setLastSaved(new Date())
-            setStatus('saved')
-
-            // Update user's active status
-            updateUserActivity()
-
+            const docRef = doc(db, 'documents', docId);
+            await updateDoc(docRef, {
+                content: content,
+                lastUpdated: new Date(),
+                lastUpdatedBy: {
+                    uid: user.uid,
+                    displayName: user.displayName || 'Unknown User',
+                    email: user.email,
+                    photoURL: user.photoURL
+                }
+            });
+            
         } catch (error) {
-            console.error('Error saving document:', error)
-            setStatus('error')
+            console.error('Error saving document:', error);
+            setStatusMessage('Error saving document');
         }
-    }
+    };
 
     const updateUserActivity = async () => {
         if (!user || !docId) return
@@ -594,6 +575,12 @@ export default function Services() {
                     )
                     setActiveUsers(filteredUsers)
                 }
+
+                // Set the last updated information
+                if (data.lastUpdatedBy) {
+                    setLastUpdatedBy(data.lastUpdatedBy);
+                    setLastUpdatedTime(data.lastUpdated?.toDate() || null);
+                }
             }
         }, (error) => {
             console.error("Error in document snapshot listener:", error)
@@ -634,6 +621,12 @@ export default function Services() {
                     if (!isOwner && !isCollaborator) {
                         setStatus('no-access')
                         editor.setEditable(false)
+                    }
+
+                    // Set the last updated information
+                    if (data.lastUpdatedBy) {
+                        setLastUpdatedBy(data.lastUpdatedBy);
+                        setLastUpdatedTime(data.lastUpdated?.toDate() || null);
                     }
                 }
             } catch (error) {
@@ -1412,6 +1405,35 @@ export default function Services() {
                     <div className="border-t border-gray-100 p-3 bg-gradient-to-r from-gray-50 to-white">
                         <div className="flex justify-between items-center text-xs text-gray-500">
                             <div>{wordCount} words</div>
+                            {lastUpdatedBy && (
+                                <div className="flex items-center space-x-2">
+                                    <span>Last updated by:</span>
+                                    <div className="flex items-center space-x-1">
+                                        {lastUpdatedBy.photoURL ? (
+                                            <img 
+                                                src={lastUpdatedBy.photoURL} 
+                                                alt={lastUpdatedBy.displayName}
+                                                className="w-5 h-5 rounded-full"
+                                            />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                                                {lastUpdatedBy.displayName?.charAt(0) || lastUpdatedBy.email?.charAt(0) || '?'}
+                                            </div>
+                                        )}
+                                        <span>{lastUpdatedBy.displayName || lastUpdatedBy.email}</span>
+                                    </div>
+                                    {lastUpdatedTime && (
+                                        <span>
+                                            {new Date(lastUpdatedTime).toLocaleString(undefined, {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </motion.div>
@@ -1438,4 +1460,3 @@ export default function Services() {
         </motion.div>
     )
 }
-
