@@ -1,5 +1,10 @@
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+
 import Image from '@tiptap/extension-image'
 import TextStyle from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
@@ -16,6 +21,7 @@ import CharacterCount from '@tiptap/extension-character-count'
 import { useLocation, useNavigate } from 'react-router-dom'
 import emailjs from '@emailjs/browser'
 import {GoogleGenerativeAI} from '@google/generative-ai'
+
 emailjs.init("Qbzg7xNP95oScLfsQ");
 export default function Services() {
     const [wordCount, setWordCount] = useState(0)
@@ -72,7 +78,17 @@ const generationConfig = {
     maxOutputTokens: 8192,
     responseMimeType: "text/plain",
   };
-  
+  const downloadAsPDF = async () => {
+    const content = document.querySelector('.ProseMirror');
+    const canvas = await html2canvas(content);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${documentTitle}.pdf`);
+};
+
   const handleGrammarCheck = async () => {
     if (!editor) return;
     
@@ -875,6 +891,12 @@ const handleAIRequest = async () => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
     </svg>
 </button>
+<button
+                onClick={downloadAsPDF}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
+            >
+                Download as PDF
+            </button>
                         <input
                             type="color"
                             onInput={e => editor.chain().focus().setColor(e.target.value).run()}
