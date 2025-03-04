@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit'
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Image from '@tiptap/extension-image'
+import ImageResize from 'tiptap-extension-resize-image';
 import TextStyle from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
 import TextAlign from '@tiptap/extension-text-align'
@@ -18,8 +19,34 @@ import CharacterCount from '@tiptap/extension-character-count'
 import { useLocation, useNavigate } from 'react-router-dom'
 import emailjs from '@emailjs/browser'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import Heading from '@tiptap/extension-heading'
+import { Extension } from '@tiptap/core'
+import { PDFDocument } from 'pdf-lib';
+import { saveAs } from 'file-saver';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 emailjs.init("Qbzg7xNP95oScLfsQ");
+
+// Create a custom extension for font size
+const FontSize = Extension.create({
+  name: 'fontSize',
+
+  addAttributes() {
+    return {
+      fontSize: {
+        default: null,
+        parseHTML: element => element.style.fontSize,
+        renderHTML: attributes => {
+          if (!attributes.fontSize) return {}
+          return {
+            style: `font-size: ${attributes.fontSize}`
+          }
+        }
+      }
+    }
+  }
+})
+
 export default function Services() {
     const [wordCount, setWordCount] = useState(0)
     const [status, setStatus] = useState('connected')
@@ -75,7 +102,7 @@ export default function Services() {
         responseMimeType: "text/plain",
     };
 
-    const downloadAsPDF = async () => {
+    const downloadAsPDF = async (saveFile = true) => {
         const content = document.querySelector('.ProseMirror');
         const canvas = await html2canvas(content);
         const imgData = canvas.toDataURL('image/png');
@@ -83,7 +110,88 @@ export default function Services() {
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`${documentTitle}.pdf`);
+        
+        if (saveFile) {
+            pdf.save(`${documentTitle}.pdf`);
+        }
+        
+        // Return the PDF blob for Word conversion
+        return new Blob([pdf.output('blob')], { type: 'application/pdf' });
+    };
+
+    const downloadAsWord = async () => {
+        try {
+            const content = editor.getJSON();
+            const children = [];
+
+            // Helper function to safely get text from node
+            const getNodeText = (node) => {
+                if (!node) return '';
+                if (typeof node.text === 'string') return node.text;
+                if (Array.isArray(node.content)) {
+                    return node.content.map(getNodeText).join('');
+                }
+                return '';
+            };
+
+            // Convert editor content to Word document format
+            const processNode = (node) => {
+                switch (node.type) {
+                    case 'heading':
+                        return new Paragraph({
+                            children: [new TextRun({ 
+                                text: getNodeText(node),
+                                size: 32, 
+                                bold: true 
+                            })],
+                            spacing: { before: 240, after: 120 }
+                        });
+                    case 'paragraph':
+                        return new Paragraph({
+                            children: [new TextRun({ 
+                                text: getNodeText(node),
+                                size: 24 
+                            })],
+                            spacing: { before: 120, after: 120 }
+                        });
+                    default:
+                        return new Paragraph({
+                            children: [new TextRun({ 
+                                text: getNodeText(node),
+                                size: 24 
+                            })]
+                        });
+                }
+            };
+
+            // Process all nodes
+            if (Array.isArray(content.content)) {
+                content.content.forEach(node => {
+                    children.push(processNode(node));
+                });
+            }
+
+            // Create document
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: children.length > 0 ? children : [
+                        new Paragraph({
+                            children: [new TextRun({ text: editor.getText() })]
+                        })
+                    ]
+                }]
+            });
+
+            // Generate blob directly instead of buffer
+            const blob = await Packer.toBlob(doc);
+            
+            // Save the file
+            saveAs(blob, `${documentTitle}.docx`);
+        } catch (error) {
+            console.error('Error converting to Word:', error);
+            alert('Error converting to Word document. Please try again.');
+        }
     };
 
     const handleGrammarCheck = async () => {
@@ -188,6 +296,10 @@ export default function Services() {
             Highlight,
             Color,
             CharacterCount,
+            Heading.configure({
+                levels: [1, 2, 3, 4, 5, 6],
+            }),
+            FontSize,
         ],
         content: '<p>Start writing your document...</p>',
         onUpdate: ({ editor }) => {
@@ -1033,6 +1145,8 @@ export default function Services() {
                             <option value="Inter">Default</option>
                             <option value="serif">Serif</option>
                             <option value="monospace">Monospace</option>
+                            <option value="arial">Arial</option>
+                            <option value="cursive">Cursive</option>
                         </select>
                         <div className="h-6 w-px bg-gray-200" />
                         <button
@@ -1061,18 +1175,129 @@ export default function Services() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                             </svg>
                         </button>
-                        <button
-                            onClick={downloadAsPDF}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
-                        >
-                            Download as PDF
-                        </button>
                         <input
                             type="color"
                             onInput={e => editor.chain().focus().setColor(e.target.value).run()}
-                            className="w-8 h-8 rounded border border-gray-200 p-1 cursor-pointer"
+                            className="w-16 h-8 rounded border border-gray-200 p-1 cursor-pointer"
                             value={editor?.getAttributes('textStyle').color || '#000000'}
                         />
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => downloadAsPDF(true)}
+                                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center space-x-1"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>PDF</span>
+                            </button>
+                            <button
+                                onClick={downloadAsWord}
+                                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center space-x-1"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Word</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Add this right after the existing toolbar div */}
+                    <div className="border-t border-gray-100 p-2 bg-gradient-to-r from-gray-50 to-white flex items-center space-x-2 overflow-x-auto">
+                        <select
+                            onChange={(e) => {
+                                const level = parseInt(e.target.value);
+                                if (level) {
+                                    editor.chain().focus().toggleHeading({ level }).run();
+                                } else {
+                                    editor.chain().focus().setParagraph().run();
+                                }
+                            }}
+                            value={
+                                [1, 2, 3, 4, 5, 6].find(level => editor?.isActive('heading', { level })) || ''
+                            }
+                            className="text-sm border border-gray-200 rounded px-2 py-1 text-gray-600 focus:outline-none focus:border-gray-300"
+                        >
+                            <option value="">Normal text</option>
+                            <option value="1">Heading 1</option>
+                            <option value="2">Heading 2</option>
+                            <option value="3">Heading 3</option>
+                            <option value="4">Heading 4</option>
+                            <option value="5">Heading 5</option>
+                            <option value="6">Heading 6</option>
+                        </select>
+
+                        <div className="h-6 w-px bg-gray-200" />
+
+                        <select
+                            onChange={(e) => {
+                                const size = e.target.value;
+                                if (size) {
+                                    editor.chain().focus().setAttributes('fontSize', { fontSize: size }).run();
+                                } else {
+                                    editor.chain().focus().unsetAttributes('fontSize').run();
+                                }
+                            }}
+                            value={editor?.getAttributes('fontSize').fontSize || ''}
+                            className="text-sm border border-gray-200 rounded px-2 py-1 text-gray-600 focus:outline-none focus:border-gray-300"
+                        >
+                            <option value="">Default size</option>
+                            <option value="12px">Small (12px)</option>
+                            <option value="14px">Normal (14px)</option>
+                            <option value="16px">Medium (16px)</option>
+                            <option value="18px">Large (18px)</option>
+                            <option value="24px">XL (24px)</option>
+                            <option value="30px">2XL (30px)</option>
+                            <option value="36px">3XL (36px)</option>
+                        </select>
+
+                        <div className="h-6 w-px bg-gray-200" />
+
+                        <select
+                            onChange={(e) => editor.chain().focus().setTextAlign(e.target.value).run()}
+                            className="text-sm border border-gray-200 rounded px-2 py-1 text-gray-600 focus:outline-none focus:border-gray-300"
+                        >
+                            <option value="left">Align Left</option>
+                            <option value="center">Align Center</option>
+                            <option value="right">Align Right</option>
+                            <option value="justify">Justify</option>
+                        </select>
+
+                        <div className="h-6 w-px bg-gray-200" />
+
+                        <button
+                            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                            className={`p-2 rounded hover:bg-gray-100 transition-colors ${
+                                editor?.isActive('blockquote') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
+                            }`}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10.5h4m-4 3h4m-4 3h4M3 18h18V6H3v12z"/>
+                            </svg>
+                        </button>
+
+                        <button
+                            onClick={() => editor.chain().focus().toggleBulletList().run()}
+                            className={`p-2 rounded hover:bg-gray-100 transition-colors ${
+                                editor?.isActive('bulletList') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
+                            }`}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+
+                        <button
+                            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                            className={`p-2 rounded hover:bg-gray-100 transition-colors ${
+                                editor?.isActive('orderedList') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
+                            }`}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 6h13M7 12h13M7 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                            </svg>
+                        </button>
                     </div>
 
                     {/* Editor Content */}
@@ -1096,6 +1321,70 @@ export default function Services() {
                                 .ProseMirror > * + * {
                                     margin-top: 0.75em;
                                 }
+                                .ProseMirror h1 {
+                                    font-size: 2.25rem;
+                                    font-weight: bold;
+                                    line-height: 1.2;
+                                    margin-top: 1em;
+                                }
+                                .ProseMirror h2 {
+                                    font-size: 1.875rem;
+                                    font-weight: bold;
+                                    line-height: 1.2;
+                                    margin-top: 0.8em;
+                                }
+                                .ProseMirror h3 {
+                                    font-size: 1.5rem;
+                                    font-weight: bold;
+                                    line-height: 1.2;
+                                    margin-top: 0.6em;
+                                }
+                                .ProseMirror h4 {
+                                    font-size: 1.25rem;
+                                    font-weight: bold;
+                                    line-height: 1.2;
+                                    margin-top: 0.4em;
+                                }
+                                .ProseMirror h5 {
+                                    font-size: 1.125rem;
+                                    font-weight: bold;
+                                    line-height: 1.2;
+                                    margin-top: 0.4em;
+                                }
+                                .ProseMirror h6 {
+                                    font-size: 1rem;
+                                    font-weight: bold;
+                                    line-height: 1.2;
+                                    margin-top: 0.4em;
+                                }
+                                .ProseMirror blockquote {
+                                    border-left: 3px solid #e5e7eb;
+                                    padding-left: 1em;
+                                    margin-left: 0;
+                                    font-style: italic;
+                                    color: #4b5563;
+                                }
+                                .ProseMirror ul {
+                                    list-style-type: disc;
+                                    padding-left: 1.5em;
+                                }
+                                .ProseMirror ol {
+                                    list-style-type: decimal;
+                                    padding-left: 1.5em;
+                                }
+                                .ProseMirror [style*="font-size"] {
+                                    display: inline;
+                                    line-height: 1.4;
+                                }
+
+                                /* Add specific styles for different font sizes */
+                                .ProseMirror [style*="font-size: 12px"] { line-height: 1.5; }
+                                .ProseMirror [style*="font-size: 14px"] { line-height: 1.5; }
+                                .ProseMirror [style*="font-size: 16px"] { line-height: 1.6; }
+                                .ProseMirror [style*="font-size: 18px"] { line-height: 1.6; }
+                                .ProseMirror [style*="font-size: 24px"] { line-height: 1.4; }
+                                .ProseMirror [style*="font-size: 30px"] { line-height: 1.3; }
+                                .ProseMirror [style*="font-size: 36px"] { line-height: 1.2; }
                             `}
                         </style>
                         <EditorContent editor={editor} />

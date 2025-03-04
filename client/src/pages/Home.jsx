@@ -1,9 +1,39 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   // Add state for active tab
   const [activeTab, setActiveTab] = useState('editor');
+
+  // Add state for carousel
+  const [currentSlide, setCurrentSlide] = useState(0);
+  
+  const slides = [
+    {
+      image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&q=80",
+      alt: "Code Editor Interface - Programming on dark background"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1600267175161-cfaa711b4a81?auto=format&fit=crop&q=80",
+      alt: "Remote Collaboration - People working together"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80",
+      alt: "AI Technology Interface"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80",
+      alt: "Modern Code Environment"
+    }
+  ];
+
+  // Auto-advance carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -28,12 +58,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100 relative overflow-hidden">
-      {/* Background Gradients remain the same */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gray-200/50 rounded-full filter blur-3xl"></div>
-        <div className="absolute top-1/4 right-1/3 w-96 h-96 bg-gray-100/50 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gray-300/30 rounded-full filter blur-3xl"></div>
-      </div>
+      {/* Background pattern */}
+      <div className="absolute inset-0 bg-[url('/images/grid-pattern.svg')] opacity-5"></div>
 
       {/* Hero Section with animations */}
       <motion.div 
@@ -43,48 +69,84 @@ export default function Home() {
         transition={{ duration: 0.8 }}
       >
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-32">
-          <div className="text-center space-y-8">
-            {/* Main Heading */}
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 max-w-4xl mx-auto leading-tight">
-              The content studio for
-              <span className="block mt-2 bg-gradient-to-r from-gray-800 to-black text-transparent bg-clip-text">
-                creating impactful stories
-              </span>
-            </h1>
+          <div className="flex flex-col lg:flex-row items-center gap-12">
+            {/* Left content */}
+            <div className="flex-1 text-left space-y-8">
+              {/* Main Heading */}
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+                The content studio for
+                <span className="block mt-2 bg-gradient-to-r from-gray-800 to-black text-transparent bg-clip-text">
+                  creating impactful stories
+                </span>
+              </h1>
 
-            <p className="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto">
-              Transform your ideas into compelling content with our powerful editing suite. 
-              Featuring real-time collaboration, AI assistance, and version control.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-              <button className="px-8 py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                Start Writing
-              </button>
-              <button className="px-8 py-4 border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-900 hover:text-white transition-all duration-300">
-                View Examples
-              </button>
-            </div>
-            <div className="mt-20">
-              <p className="text-gray-600 text-sm uppercase tracking-wider mb-8">
-                Trusted by leading content creators
+              <p className="text-gray-600 text-lg md:text-xl">
+                Transform your ideas into compelling content with our powerful editing suite. 
+                Featuring real-time collaboration, AI assistance, and version control.
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-                <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded"></div>
-                <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded"></div>
-                <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded"></div>
-                <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded"></div>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                <button className="px-8 py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                  Start Writing
+                </button>
+                <button className="px-8 py-4 border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-900 hover:text-white transition-all duration-300">
+                  View Examples
+                </button>
+              </div>
+            </div>
+
+            {/* Right content - Carousel */}
+            <div className="flex-1 relative">
+              <div className="relative w-full aspect-video rounded-2xl mb-10 overflow-hidden shadow-2xl">
+                <motion.div 
+                  className="absolute inset-0 flex"
+                  animate={{ x: `${-100 * currentSlide}%` }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  {slides.map((slide, index) => (
+                    <div key={index} className="w-full flex-shrink-0">
+                      <img 
+                        src={slide.image} 
+                        alt={slide.alt}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </motion.div>
+                
+                {/* Carousel indicators */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        currentSlide === index ? 'bg-white w-6' : 'bg-white/50'
+                      }`}
+                      onClick={() => setCurrentSlide(index)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </motion.div>
       <motion.div 
-        className="py-20 overflow-hidden bg-gray-50"
+        className="overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black relative py-32"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
       >
-        <div className="flex flex-col gap-4 text-9xl">
+        {/* Add decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full filter blur-3xl"></div>
+        </div>
+
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNjB2NjBIMHoiLz48cGF0aCBkPSJNNjAgMEgwdjYwaDYwVjB6TTIgMmg1NnY1NkgyVjJ6IiBmaWxsPSIjZmZmZmZmMDUiLz48L2c+PC9zdmc+')] opacity-10"></div>
+
+        <div className="flex flex-col gap-4 text-9xl relative">
           {/* First Row */}
           <div className="flex flex-nowrap gap-2 marquee-container">
             <motion.div 
@@ -109,9 +171,9 @@ export default function Home() {
                 "Open Source"
               ].map((text, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <div className="text-9xl font-bold text-gray-900">{text}</div>
+                  <div className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/80">{text}</div>
                   <div className="text-9xl font-bold" style={{
-                    WebkitTextStroke: '1px black',
+                    WebkitTextStroke: '1px rgba(255,255,255,0.3)',
                     WebkitTextFillColor: 'transparent'
                   }}>{text}</div>
                 </div>
@@ -143,9 +205,9 @@ export default function Home() {
                 "Secure"
               ].map((text, index) => (
                 <div key={index} className="flex items-center gap-4">
-                  <div className="text-9xl font-bold text-gray-900">{text}</div>
+                  <div className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white/90 to-white/70">{text}</div>
                   <div className="text-9xl font-bold" style={{
-                    WebkitTextStroke: '1px black',
+                    WebkitTextStroke: '1px rgba(255,255,255,0.3)',
                     WebkitTextFillColor: 'transparent'
                   }}>{text}</div>
                 </div>
@@ -177,9 +239,9 @@ export default function Home() {
                 "Modern"
               ].map((text, index) => (
                 <div key={index} className="flex items-center gap-4">
-                  <div className="text-9xl font-bold text-gray-900">{text}</div>
+                  <div className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">{text}</div>
                   <div className="text-9xl font-bold" style={{
-                    WebkitTextStroke: '1px black',
+                    WebkitTextStroke: '1px rgba(255,255,255,0.3)',
                     WebkitTextFillColor: 'transparent'
                   }}>{text}</div>
                 </div>
@@ -188,6 +250,7 @@ export default function Home() {
           </div>
         </div>
       </motion.div>
+      
       <motion.div 
         className="max-w-7xl mx-auto px-6 relative z-10 py-20"
         initial="hidden"
@@ -195,7 +258,7 @@ export default function Home() {
         viewport={{ once: true }}
         variants={containerVariants}
       >
-        <div className="relative bg-white py-12 px-6 rounded-xl shadow-sm mb-24">
+        <div className="relative bg-gradient-to-br from-white to-gray-50 py-12 px-6 rounded-xl shadow-sm mb-24 border border-gray-100">
           <motion.h2 
             className="text-center text-4xl md:text-5xl font-bold text-gray-900 mb-6"
             variants={itemVariants}
