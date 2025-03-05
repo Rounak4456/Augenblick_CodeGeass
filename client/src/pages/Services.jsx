@@ -375,26 +375,50 @@ export default function Services() {
     }
 
     const saveToFirestore = async (content) => {
-        if (!user || !docId) return;
-        
+        if (!user || !docId) return
+    
         try {
-            const docRef = doc(db, 'documents', docId);
-            await updateDoc(docRef, {
-                content: content,
-                lastUpdated: new Date(),
-                lastUpdatedBy: {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Unknown User',
-                    email: user.email,
-                    photoURL: user.photoURL
-                }
-            });
-            
+            const now = new Date().toISOString()
+            const docRef = doc(db, 'documents', docId)
+            const docSnap = await getDoc(docRef)
+    
+            if (docSnap.exists()) {
+                // Update existing document
+                await updateDoc(docRef, {
+                    content,
+                    updatedAt: now,
+                    lastEditedBy: user.displayName,
+                })
+            } else {
+                // Create new document
+                await setDoc(docRef, {
+                    content,
+                    userId: user.uid,
+                    createdAt: now,
+                    updatedAt: now,
+                    createdBy: user.displayName,
+                    userEmail: user.email,
+                    title: documentTitle,
+                    collaborators: [],
+                    activeUsers: [],
+                    lastEditedBy: user.displayName
+                })
+                setIsOwner(true)
+            }
+    
+            setLastSaved(new Date())
+            setStatus('saved')
+    
+            // Update user's active status
+            updateUserActivity()
+    
         } catch (error) {
-            console.error('Error saving document:', error);
-            setStatusMessage('Error saving document');
+            console.error('Error saving document:', error)
+            setStatus('error')
+            setStatusMessage('Error saving document')
+            setTimeout(() => setStatusMessage(''), 3000)
         }
-    };
+    }
 
     const updateUserActivity = async () => {
         if (!user || !docId) return
